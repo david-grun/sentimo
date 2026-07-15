@@ -89,19 +89,19 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
         onChange={(e) => setText(e.target.value)}
         placeholder="Paste one review per line..."
         rows={5}
-        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
       />
       <input
         value={location}
         onChange={(e) => setLocation(e.target.value)}
         placeholder="Location (required, e.g. Vikings MOA)"
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
       />
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={submit}
           disabled={status === "loading"}
-          className="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+          className="rounded-lg bg-violet-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-violet-500 disabled:opacity-50 transition-colors"
         >
           {status === "loading"
             ? "Classifying..."
@@ -110,7 +110,7 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
               : "Submit reviews"}
         </button>
 
-        <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-600 cursor-pointer transition-colors">
+        <label className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:border-violet-400 hover:text-violet-600 cursor-pointer transition-colors">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -130,7 +130,7 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
         </label>
 
         {file && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -148,7 +148,7 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
             {file.name}
             <button
               onClick={() => setFile(null)}
-              className="ml-0.5 text-indigo-400 hover:text-indigo-700"
+              className="ml-0.5 text-violet-400 hover:text-violet-700"
               aria-label="Remove selected file"
             >
               ✕

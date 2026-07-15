@@ -19,7 +19,7 @@ export default function SentimentFilter({
           onClick={() => onChange(option)}
           className={`rounded-full px-3 py-1 text-sm font-medium border transition-colors ${
             value === option
-              ? "bg-indigo-600 text-white border-indigo-600"
+              ? "bg-violet-600 text-white border-violet-600"
               : "border-slate-300 text-slate-600 hover:bg-slate-50"
           }`}
         >

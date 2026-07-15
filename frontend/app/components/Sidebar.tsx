@@ -47,8 +47,8 @@ export default function Sidebar() {
     <aside className="hidden md:flex w-60 shrink-0 flex-col bg-slate-950 text-slate-300 min-h-screen">
       <div className="px-5 py-6">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo-mark.png" alt="Sentimo logo" width={28} height={28} />
-          <span className="text-base font-semibold text-white tracking-tight">Sentimo</span>
+          <Image src="/logo-mark.png" alt="Sentimo logo" width={34} height={34} />
+          <span className="text-lg font-semibold text-white tracking-tight">Sentimo</span>
         </Link>
       </div>
 
@@ -61,7 +61,7 @@ export default function Sidebar() {
               href={link.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 active
-                  ? "bg-indigo-500/15 text-indigo-300"
+                  ? "bg-violet-500/15 text-violet-300"
                   : "text-slate-400 hover:bg-white/5 hover:text-slate-100"
               }`}
             >

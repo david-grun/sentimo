@@ -60,7 +60,7 @@ export default function ComparePage() {
         <select
           value={locationA}
           onChange={(e) => setLocationA(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
         >
           <option value="">Location A</option>
           {locations.map((loc) => (
@@ -73,7 +73,7 @@ export default function ComparePage() {
         <select
           value={locationB}
           onChange={(e) => setLocationB(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
         >
           <option value="">Location B</option>
           {locations.map((loc) => (
@@ -85,7 +85,7 @@ export default function ComparePage() {
         <button
           onClick={handleCompare}
           disabled={loading}
-          className="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+          className="rounded-lg bg-violet-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-violet-500 disabled:opacity-50 transition-colors"
         >
           {loading ? "Comparing..." : "Compare"}
         </button>

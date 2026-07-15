@@ -51,12 +51,12 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       <header className="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Image src="/logo-mark.png" alt="Sentimo logo" width={28} height={28} />
-          <span className="text-base font-semibold text-slate-900 tracking-tight">Sentimo</span>
+          <Image src="/logo-mark.png" alt="Sentimo logo" width={34} height={34} />
+          <span className="text-lg font-semibold text-slate-900 tracking-tight">Sentimo</span>
         </div>
         <Link
           href="/dashboard"
-          className="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-indigo-500 transition-colors"
+          className="rounded-lg bg-violet-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-violet-500 transition-colors"
         >
           Open Dashboard
         </Link>
@@ -64,7 +64,7 @@ export default function LandingPage() {
 
       <section className="max-w-6xl mx-auto px-8 pt-12 pb-20 grid lg:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col gap-6">
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
             AI-powered review intelligence
           </span>
           <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-slate-900 text-balance">
@@ -77,7 +77,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="rounded-lg bg-indigo-600 text-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-indigo-500 transition-colors"
+              className="rounded-lg bg-violet-600 text-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-violet-500 transition-colors"
             >
               Open Dashboard
             </Link>
@@ -123,7 +123,7 @@ export default function LandingPage() {
               key={feature.title}
               className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card flex flex-col gap-3"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -144,7 +144,7 @@ export default function LandingPage() {
 
       <footer className="max-w-6xl mx-auto px-8 py-10 flex items-center justify-between text-xs text-slate-400">
         <span>Sentimo — built with FastAPI, Next.js, and Gemini.</span>
-        <Link href="/dashboard" className="font-medium text-slate-500 hover:text-indigo-600">
+        <Link href="/dashboard" className="font-medium text-slate-500 hover:text-violet-600">
           Open Dashboard →
         </Link>
       </footer>

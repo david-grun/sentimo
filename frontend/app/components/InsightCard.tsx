@@ -45,7 +45,7 @@ export default function InsightCard({
           {insight.theme.replace(/_/g, " ")}
         </h3>
         <span
-          className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 cursor-help"
+          className="rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 cursor-help"
           title="score = review count × average severity"
         >
           score {insight.score.toFixed(1)}
@@ -64,7 +64,7 @@ export default function InsightCard({
 
       <button
         onClick={toggle}
-        className="flex items-center gap-1.5 self-start text-xs font-medium text-indigo-600 hover:text-indigo-500"
+        className="flex items-center gap-1.5 self-start text-xs font-medium text-violet-600 hover:text-violet-500"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
