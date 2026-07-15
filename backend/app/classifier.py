@@ -58,3 +58,38 @@ def classify_reviews(texts: list[str]) -> list[Classification | None]:
         except ValidationError:
             results.append(None)
     return results
+
+
+RECOMMENDATION_PROMPT = """You are a business consultant advising a small business owner.
+
+You'll receive a theme name, how many reviews raised it, the average severity (1-5,
+5=critical), and a list of short issue/praise snippets extracted from real customer
+reviews about that theme.
+
+Write ONE short, concrete, actionable paragraph (2-4 sentences) telling the owner what
+to do about it. Synthesize the snippets into practical next steps — do not just repeat
+them verbatim. If severity is low and sentiment is mostly positive, keep it brief and
+affirming instead of inventing problems. Plain text only, no markdown, no headers.
+"""
+
+
+def generate_recommendation(
+    theme: str, count: int, avg_severity: float, issues: list[str]
+) -> str:
+    """Synthesize an actionable recommendation for a theme from its review issues."""
+    client = genai.Client(api_key=config.GEMINI_API_KEY)
+    payload = {
+        "theme": theme,
+        "review_count": count,
+        "avg_severity": round(avg_severity, 2),
+        "issues": issues,
+    }
+    response = client.models.generate_content(
+        model=config.GEMINI_MODEL,
+        contents=json.dumps(payload),
+        config=types.GenerateContentConfig(system_instruction=RECOMMENDATION_PROMPT),
+    )
+    text = (response.text or "").strip()
+    if not text:
+        raise ValueError("empty recommendation")
+    return text

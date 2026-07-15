@@ -3,6 +3,7 @@ import type {
   CsvUploadResponse,
   InsightsResponse,
   LocationsResponse,
+  RecommendationResponse,
   ReviewListResponse,
   ReviewsResponse,
   Sentiment,
@@ -79,6 +80,19 @@ export function fetchInsights(
   if (sentiment) query.set("sentiment", sentiment);
   if (location) query.set("location", location);
   return request<InsightsResponse>(`/insights?${query.toString()}`, { signal });
+}
+
+export function fetchRecommendation(
+  theme: string,
+  sentiment?: Sentiment | "",
+  location?: string
+): Promise<RecommendationResponse> {
+  const query = new URLSearchParams();
+  if (sentiment) query.set("sentiment", sentiment);
+  if (location) query.set("location", location);
+  return request<RecommendationResponse>(
+    `/insights/${encodeURIComponent(theme)}/recommendation?${query.toString()}`
+  );
 }
 
 export function fetchLocations(): Promise<LocationsResponse> {

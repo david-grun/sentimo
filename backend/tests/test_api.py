@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import classifier
-from app.classifier import classify_reviews
+from app.classifier import classify_reviews, generate_recommendation
 from app.models import Classification
 
 DELIVERY = Classification(
@@ -175,3 +175,17 @@ def test_classifier_marks_invalid_items_as_failed(
 def test_classifier_pads_short_response(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_gemini(monkeypatch, json.dumps([DELIVERY.model_dump()]))
     assert classify_reviews(["a", "b"]) == [DELIVERY, None]
+
+
+def test_generate_recommendation_returns_text(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_gemini(monkeypatch, "Fix your delivery packaging and driver ETAs.")
+    text = generate_recommendation("delivery", 3, 4.0, ["Late delivery", "Cold food"])
+    assert text == "Fix your delivery packaging and driver ETAs."
+
+
+def test_generate_recommendation_raises_on_empty_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_gemini(monkeypatch, "   ")
+    with pytest.raises(ValueError):
+        generate_recommendation("delivery", 1, 2.0, ["Late"])

@@ -88,6 +88,11 @@ class InsightsResponse(BaseModel):
     insights: list[Insight]
 
 
+class RecommendationResponse(BaseModel):
+    theme: str
+    recommendation: str
+
+
 class LocationSummary(BaseModel):
     location: str
     review_count: int

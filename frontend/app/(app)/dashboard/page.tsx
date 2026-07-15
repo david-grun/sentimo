@@ -83,7 +83,12 @@ export default function DashboardPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {insights.map((insight) => (
-              <InsightCard key={insight.theme} insight={insight} />
+              <InsightCard
+                key={insight.theme}
+                insight={insight}
+                sentiment={sentiment}
+                location={location}
+              />
             ))}
           </div>
         )}

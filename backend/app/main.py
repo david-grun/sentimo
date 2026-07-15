@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from app import config, db
-from app.classifier import classify_reviews
+from app.classifier import classify_reviews, generate_recommendation
 from app.csv_parser import CsvParseError, parse_csv
 from app.models import (
     CompareResponse,
@@ -16,6 +16,7 @@ from app.models import (
     LocationInsights,
     LocationsResponse,
     LocationSummary,
+    RecommendationResponse,
     ReviewItem,
     ReviewListResponse,
     ReviewsRequest,
@@ -321,6 +322,46 @@ def get_insights(
         ]
     insights.sort(key=lambda insight: insight.score, reverse=True)
     return InsightsResponse(insights=insights)
+
+
+@app.get("/insights/{theme}/recommendation")
+def get_recommendation(
+    theme: Theme, sentiment: Sentiment | None = None, location: str | None = None
+) -> JSONResponse:
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT c.extracted_issue, c.severity
+            FROM classifications c
+            JOIN reviews r ON r.id = c.review_id
+            WHERE c.theme = %(theme)s
+              AND (%(sentiment)s::text IS NULL OR c.sentiment = %(sentiment)s)
+              AND (%(location)s::text IS NULL OR r.location = %(location)s)
+            ORDER BY c.severity DESC, c.classified_at DESC
+            LIMIT 15
+            """,
+            {"theme": theme, "sentiment": sentiment, "location": location},
+        )
+        rows = cur.fetchall()
+
+    if not rows:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "no reviews found for this theme", "detail": {"theme": theme}},
+        )
+
+    issues = [row[0] for row in rows if row[0]]
+    avg_severity = sum(row[1] for row in rows) / len(rows)
+
+    try:
+        recommendation = generate_recommendation(theme, len(rows), avg_severity, issues)
+    except Exception:
+        recommendation = "Couldn't generate a recommendation right now — try again shortly."
+
+    return JSONResponse(
+        status_code=200,
+        content=RecommendationResponse(theme=theme, recommendation=recommendation).model_dump(),
+    )
 
 
 @app.get("/locations")

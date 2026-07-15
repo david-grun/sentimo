@@ -57,6 +57,11 @@ export interface InsightsResponse {
   insights: Insight[];
 }
 
+export interface RecommendationResponse {
+  theme: string;
+  recommendation: string;
+}
+
 export interface ReviewsResponse {
   created: number;
   reviews: EnrichedReview[];

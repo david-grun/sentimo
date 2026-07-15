@@ -1,7 +1,43 @@
-import type { Insight } from "../types";
+"use client";
+
+import { useState } from "react";
+import { fetchRecommendation } from "../api";
+import type { Insight, Sentiment } from "../types";
 import SeverityBar from "./SeverityBar";
 
-export default function InsightCard({ insight }: { insight: Insight }) {
+export default function InsightCard({
+  insight,
+  sentiment,
+  location,
+}: {
+  insight: Insight;
+  sentiment?: Sentiment | "";
+  location?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle() {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+    setExpanded(true);
+    if (recommendation || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchRecommendation(insight.theme, sentiment, location);
+      setRecommendation(result.recommendation);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load recommendation.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
@@ -25,6 +61,31 @@ export default function InsightCard({ insight }: { insight: Insight }) {
           avg severity {insight.avg_severity.toFixed(1)}
         </span>
       </div>
+
+      <button
+        onClick={toggle}
+        className="flex items-center gap-1.5 self-start text-xs font-medium text-indigo-600 hover:text-indigo-500"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-90" : ""}`}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+        {expanded ? "Hide recommendation" : "What should I do about this?"}
+      </button>
+
+      {expanded && (
+        <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2.5 text-sm text-slate-600">
+          {loading && "Thinking..."}
+          {error && <span className="text-rose-600">{error}</span>}
+          {!loading && !error && recommendation}
+        </div>
+      )}
     </div>
   );
 }
