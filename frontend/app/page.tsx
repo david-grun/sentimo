@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const FEATURES = [
@@ -50,9 +51,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       <header className="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-500 text-sm font-bold text-white">
-            S
-          </span>
+          <Image src="/logo-mark.png" alt="Sentimo logo" width={28} height={28} />
           <span className="text-base font-semibold text-slate-900 tracking-tight">Sentimo</span>
         </div>
         <Link

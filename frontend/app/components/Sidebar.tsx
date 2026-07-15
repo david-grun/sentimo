@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -46,9 +47,7 @@ export default function Sidebar() {
     <aside className="hidden md:flex w-60 shrink-0 flex-col bg-slate-950 text-slate-300 min-h-screen">
       <div className="px-5 py-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-500 text-sm font-bold text-white">
-            S
-          </span>
+          <Image src="/logo-mark.png" alt="Sentimo logo" width={28} height={28} />
           <span className="text-base font-semibold text-white tracking-tight">Sentimo</span>
         </Link>
       </div>
