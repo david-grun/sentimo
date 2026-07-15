@@ -18,6 +18,24 @@ Each classification object must have exactly these fields:
 - "severity": integer 1-5 (1=mild, 5=critical; how urgently the business should act)
 - "extracted_issue": one-line summary of the core issue or praise in the review
 
+Theme definitions:
+- "delivery": shipping/delivery logistics — lateness, courier behavior, packaging or
+  temperature on arrival.
+- "product_quality": taste, freshness, portion size, or how the food/product itself was
+  made or presented. Does NOT include illness, contamination, or unsanitary conditions —
+  those are "cleanliness" even if the review focuses on the food.
+- "customer_service": staff friendliness, attentiveness, order accuracy, how complaints
+  were handled.
+- "pricing": value for money, cost relative to portion/quality.
+- "ambiance": physical atmosphere — decor, noise, seating, vibe.
+- "cleanliness": hygiene and sanitation — dirtiness, odors, pests, food safety, or any
+  illness/sickness reported after consuming food, even if not explicitly described as
+  "dirty" (e.g. food poisoning symptoms are a cleanliness/food-safety issue, not a
+  product_quality one).
+- "communication": order updates, reservation confirmations, responsiveness to inquiries,
+  miscommunication about orders.
+- "other": doesn't fit any of the above.
+
 Rules:
 - Return ONLY the JSON array, no markdown, no commentary.
 - The output array must have exactly as many elements as the input array.
