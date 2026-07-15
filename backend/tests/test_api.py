@@ -136,6 +136,16 @@ def test_insights_ranked_and_filtered(client: TestClient, mock_classifier) -> No
     assert themes == {"delivery", "pricing"}
 
 
+def test_delete_all_reviews(client: TestClient, mock_classifier) -> None:
+    mock_classifier([DELIVERY, AMBIANCE])
+    _post_reviews(client, ["Cold pizza", "Lovely staff"])
+
+    response = client.delete("/reviews")
+    assert response.status_code == 200
+    assert response.json()["deleted"] == 2
+    assert client.get("/reviews").json()["total"] == 0
+
+
 def test_delete_review(client: TestClient, mock_classifier) -> None:
     mock_classifier([DELIVERY])
     created = _post_reviews(client, ["Cold pizza"]).json()

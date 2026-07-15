@@ -5,13 +5,14 @@ import { fetchInsights, fetchLocations } from "../../api";
 import CriticalAlerts from "../../components/CriticalAlerts";
 import InsightCard from "../../components/InsightCard";
 import LocationFilter from "../../components/LocationFilter";
+import LocationsCard from "../../components/LocationsCard";
 import ReviewForm from "../../components/ReviewForm";
 import SentimentFilter from "../../components/SentimentFilter";
 import type { Insight, LocationSummary, Sentiment } from "../../types";
 
 export default function DashboardPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
-  const [sentiment, setSentiment] = useState<Sentiment | "">("");
+  const [sentiment, setSentiment] = useState<Sentiment | "">("negative");
   const [location, setLocation] = useState("");
   const [locations, setLocations] = useState<LocationSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-8 py-10 flex flex-col gap-10">
+    <main className="max-w-6xl mx-auto px-8 py-10 flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Dashboard</h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -63,41 +64,50 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <CriticalAlerts key={refreshKey} location={location} />
+      <div className="grid gap-6 lg:grid-cols-3 items-start">
+        <div className="lg:col-span-2 flex flex-col gap-8 min-w-0">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card flex flex-col gap-4">
+            <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+              Submit reviews
+            </h2>
+            <ReviewForm onSubmitted={handleSubmitted} />
+          </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
-          Submit reviews
-        </h2>
-        <ReviewForm onSubmitted={handleSubmitted} />
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="text-lg font-semibold text-slate-900">Fix this first</h2>
-          <div className="flex items-center gap-3">
-            <LocationFilter value={location} onChange={setLocation} locations={locations} />
-            <SentimentFilter value={sentiment} onChange={setSentiment} />
-          </div>
+          <section className="flex flex-col gap-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h2 className="text-lg font-semibold text-slate-900">Fix this first</h2>
+              <div className="flex items-center gap-3">
+                <LocationFilter value={location} onChange={setLocation} locations={locations} />
+                <SentimentFilter value={sentiment} onChange={setSentiment} />
+              </div>
+            </div>
+            {error && <p className="text-sm text-rose-600">{error}</p>}
+            {insights.length === 0 && !error ? (
+              <p className="text-sm text-slate-500 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center">
+                {sentiment === "negative"
+                  ? "No negative reviews yet — nothing to fix. Switch the filter to see other sentiments."
+                  : "No insights yet — submit some reviews above."}
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {insights.map((insight) => (
+                  <InsightCard
+                    key={insight.theme}
+                    insight={insight}
+                    sentiment={sentiment}
+                    location={location}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
         </div>
-        {error && <p className="text-sm text-rose-600">{error}</p>}
-        {insights.length === 0 && !error ? (
-          <p className="text-sm text-slate-500 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center">
-            No insights yet — submit some reviews above.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {insights.map((insight) => (
-              <InsightCard
-                key={insight.theme}
-                insight={insight}
-                sentiment={sentiment}
-                location={location}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-10">
+          <CriticalAlerts key={refreshKey} location={location} />
+          <LocationsCard locations={locations} />
+        </aside>
+      </div>
     </main>
   );
 }

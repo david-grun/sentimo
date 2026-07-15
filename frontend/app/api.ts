@@ -115,3 +115,12 @@ export async function deleteReview(id: number): Promise<void> {
     throw new Error(`Failed to delete review ${id}`);
   }
 }
+
+export async function deleteAllReviews(): Promise<number> {
+  const response = await fetch(`${API_URL}/reviews`, { method: "DELETE" });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(body?.error ?? "Failed to delete reviews");
+  }
+  return body?.deleted ?? 0;
+}

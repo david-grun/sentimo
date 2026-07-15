@@ -476,6 +476,14 @@ def compare_locations(locations: str) -> JSONResponse:
     )
 
 
+@app.delete("/reviews")
+def delete_all_reviews() -> JSONResponse:
+    with db.get_connection() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM reviews")
+        deleted = cur.rowcount
+    return JSONResponse(status_code=200, content={"deleted": deleted})
+
+
 @app.delete("/reviews/{review_id}")
 def delete_review(review_id: int) -> JSONResponse:
     with db.get_connection() as conn, conn.cursor() as cur:

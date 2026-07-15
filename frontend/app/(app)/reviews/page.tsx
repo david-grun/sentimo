@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { deleteReview, fetchLocations, fetchReviews } from "../../api";
+import { deleteAllReviews, deleteReview, fetchLocations, fetchReviews } from "../../api";
 import LocationFilter from "../../components/LocationFilter";
 import ReviewRow from "../../components/ReviewRow";
 import SentimentFilter from "../../components/SentimentFilter";
@@ -50,6 +50,17 @@ export default function ReviewsPage() {
     load();
   }
 
+  async function handleClearAll() {
+    if (!window.confirm(`Delete all ${total} reviews? This cannot be undone.`)) return;
+    try {
+      await deleteAllReviews();
+      setPage(1);
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to clear reviews.");
+    }
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -82,6 +93,13 @@ export default function ReviewsPage() {
               setPage(1);
             }}
           />
+          <button
+            onClick={handleClearAll}
+            disabled={total === 0}
+            className="rounded-lg border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-40 transition-colors"
+          >
+            Clear all
+          </button>
         </div>
       </div>
 
@@ -91,11 +109,11 @@ export default function ReviewsPage() {
         <table className="w-full text-sm text-left">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
-              <th className="py-3 px-4 font-medium">Review</th>
-              <th className="py-3 px-4 font-medium">Location</th>
-              <th className="py-3 px-4 font-medium">Theme</th>
-              <th className="py-3 px-4 font-medium">Sentiment</th>
-              <th className="py-3 px-4 font-medium">
+              <th className="py-3 px-5 font-medium">Review</th>
+              <th className="py-3 px-5 font-medium">Location</th>
+              <th className="py-3 px-5 font-medium">Theme</th>
+              <th className="py-3 px-5 font-medium">Sentiment</th>
+              <th className="py-3 px-5 font-medium">
                 <span
                   className="inline-flex items-center gap-1 cursor-help"
                   title="1 (mild) – 5 (critical): how urgently Gemini judged this review needs action, based on its content and tone."
@@ -117,7 +135,7 @@ export default function ReviewsPage() {
                   </svg>
                 </span>
               </th>
-              <th className="py-3 px-4"></th>
+              <th className="py-3 px-5"></th>
             </tr>
           </thead>
           <tbody>
