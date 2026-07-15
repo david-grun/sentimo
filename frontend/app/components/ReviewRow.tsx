@@ -9,6 +9,12 @@ const SENTIMENT_STYLES: Record<Sentiment, string> = {
   negative: "bg-rose-50 text-rose-700",
 };
 
+function severityStyle(severity: number): string {
+  if (severity >= 4) return "bg-rose-50 text-rose-700";
+  if (severity >= 3) return "bg-amber-50 text-amber-700";
+  return "bg-emerald-50 text-emerald-700";
+}
+
 export default function ReviewRow({
   review,
   onDelete,
@@ -17,16 +23,30 @@ export default function ReviewRow({
   onDelete: (id: number) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const preview =
-    review.text.length > 80 ? `${review.text.slice(0, 80)}...` : review.text;
+  const isLong = review.text.length > 140;
 
   return (
     <tr className="border-b border-slate-100 align-top hover:bg-slate-50/60">
-      <td
-        className="py-3 pr-4 max-w-sm cursor-pointer text-slate-700"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        {expanded ? review.text : preview}
+      <td className="py-3 pr-4 max-w-md text-slate-700">
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-start gap-1.5 text-left"
+          title={isLong ? (expanded ? "Click to collapse" : "Click to read full review") : undefined}
+        >
+          {isLong && (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className={`h-3.5 w-3.5 mt-1 shrink-0 text-slate-400 transition-transform ${expanded ? "rotate-90" : ""}`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          )}
+          <span className={expanded ? "" : "line-clamp-2"}>{review.text}</span>
+        </button>
       </td>
       <td className="py-3 pr-4 text-slate-500">{review.location ?? "—"}</td>
       <td className="py-3 pr-4 capitalize text-slate-700">
@@ -46,7 +66,17 @@ export default function ReviewRow({
           <span className="ml-2 text-amber-500 text-xs">{"★".repeat(review.rating)}</span>
         )}
       </td>
-      <td className="py-3 pr-4 text-slate-700">{review.severity ?? "—"}</td>
+      <td className="py-3 pr-4">
+        {review.severity !== null ? (
+          <span
+            className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${severityStyle(review.severity)}`}
+          >
+            {review.severity}
+          </span>
+        ) : (
+          <span className="text-slate-400">—</span>
+        )}
+      </td>
       <td className="py-3 pr-4">
         <button
           onClick={() => onDelete(review.id)}
