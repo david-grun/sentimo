@@ -19,8 +19,14 @@ export default function ReviewRow({
       <td className="py-2 pr-4 max-w-sm cursor-pointer" onClick={() => setExpanded((v) => !v)}>
         {expanded ? review.text : preview}
       </td>
+      <td className="py-2 pr-4">{review.location ?? "—"}</td>
       <td className="py-2 pr-4 capitalize">{review.theme?.replace(/_/g, " ") ?? "—"}</td>
-      <td className="py-2 pr-4 capitalize">{review.sentiment ?? "—"}</td>
+      <td className="py-2 pr-4 capitalize">
+        {review.sentiment ?? "—"}
+        {review.rating !== null && (
+          <span className="text-black/50 dark:text-white/50"> ({"★".repeat(review.rating)})</span>
+        )}
+      </td>
       <td className="py-2 pr-4">{review.severity ?? "—"}</td>
       <td className="py-2 pr-4">
         <button

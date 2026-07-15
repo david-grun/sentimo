@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { deleteReview, fetchReviews } from "../api";
+import { deleteReview, fetchLocations, fetchReviews } from "../api";
+import LocationFilter from "../components/LocationFilter";
 import ReviewRow from "../components/ReviewRow";
 import SentimentFilter from "../components/SentimentFilter";
 import ThemeFilter from "../components/ThemeFilter";
-import type { ReviewItem, Sentiment, Theme } from "../types";
+import type { LocationSummary, ReviewItem, Sentiment, Theme } from "../types";
 
 const PAGE_SIZE = 20;
 
@@ -15,23 +16,34 @@ export default function ReviewsPage() {
   const [page, setPage] = useState(1);
   const [theme, setTheme] = useState<Theme | "">("");
   const [sentiment, setSentiment] = useState<Sentiment | "">("");
+  const [location, setLocation] = useState("");
+  const [locations, setLocations] = useState<LocationSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  async function load(signal?: AbortSignal) {
     try {
-      const result = await fetchReviews({ page, limit: PAGE_SIZE, theme, sentiment });
+      const result = await fetchReviews({ page, limit: PAGE_SIZE, theme, sentiment, location }, signal);
       setItems(result.items);
       setTotal(result.total);
       setError(null);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Failed to load reviews.");
     }
   }
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, theme, sentiment]);
+  }, [page, theme, sentiment, location]);
+
+  useEffect(() => {
+    fetchLocations()
+      .then((result) => setLocations(result.locations))
+      .catch(() => setLocations([]));
+  }, []);
 
   async function handleDelete(id: number) {
     await deleteReview(id);
@@ -45,6 +57,14 @@ export default function ReviewsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-semibold">Reviews</h1>
         <div className="flex items-center gap-3">
+          <LocationFilter
+            value={location}
+            onChange={(value) => {
+              setLocation(value);
+              setPage(1);
+            }}
+            locations={locations}
+          />
           <ThemeFilter
             value={theme}
             onChange={(value) => {
@@ -68,6 +88,7 @@ export default function ReviewsPage() {
         <thead>
           <tr className="border-b border-black/20 dark:border-white/20">
             <th className="py-2 pr-4">Review</th>
+            <th className="py-2 pr-4">Location</th>
             <th className="py-2 pr-4">Theme</th>
             <th className="py-2 pr-4">Sentiment</th>
             <th className="py-2 pr-4">Severity</th>

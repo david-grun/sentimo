@@ -35,6 +35,9 @@ class Classification(BaseModel):
 class EnrichedReview(BaseModel):
     id: int
     text: str
+    location: str | None = None
+    reviewer_name: str | None = None
+    rating: int | None = None
 
     theme: Theme | None = None
     sentiment: Sentiment | None = None
@@ -47,11 +50,21 @@ class ReviewsResponse(BaseModel):
     reviews: list[EnrichedReview]
 
 
+class CsvUploadResponse(BaseModel):
+    created: int
+    skipped_empty: int
+    skipped_duplicate: int
+    reviews: list[EnrichedReview]
+
+
 class ReviewItem(BaseModel):
     id: int
     text: str
     source: str
     created_at: str
+    location: str | None = None
+    reviewer_name: str | None = None
+    rating: int | None = None
     theme: Theme | None = None
     sentiment: Sentiment | None = None
     severity: int | None = None
@@ -73,3 +86,38 @@ class Insight(BaseModel):
 
 class InsightsResponse(BaseModel):
     insights: list[Insight]
+
+
+class LocationSummary(BaseModel):
+    location: str
+    review_count: int
+    avg_rating: float | None = None
+
+
+class LocationsResponse(BaseModel):
+    locations: list[LocationSummary]
+
+
+class ThemeCount(BaseModel):
+    theme: str
+    count: int
+
+
+class SentimentDistribution(BaseModel):
+    positive: int
+    neutral: int
+    negative: int
+
+
+class LocationInsights(BaseModel):
+    location: str
+    total_reviews: int
+    avg_severity: float | None = None
+    avg_rating: float | None = None
+    sentiment_distribution: SentimentDistribution
+    top_complaints: list[ThemeCount]
+    top_praise: list[ThemeCount]
+
+
+class CompareResponse(BaseModel):
+    locations: list[LocationInsights]

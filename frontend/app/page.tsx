@@ -1,43 +1,70 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchInsights } from "./api";
+import { fetchInsights, fetchLocations } from "./api";
 import InsightCard from "./components/InsightCard";
+import LocationFilter from "./components/LocationFilter";
 import ReviewForm from "./components/ReviewForm";
 import SentimentFilter from "./components/SentimentFilter";
-import type { Insight, Sentiment } from "./types";
+import type { Insight, LocationSummary, Sentiment } from "./types";
 
 export default function DashboardPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [sentiment, setSentiment] = useState<Sentiment | "">("");
+  const [location, setLocation] = useState("");
+  const [locations, setLocations] = useState<LocationSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadInsights() {
+  async function loadInsights(signal?: AbortSignal) {
     try {
-      const result = await fetchInsights(sentiment);
+      const result = await fetchInsights(sentiment, location, signal);
       setInsights(result.insights);
       setError(null);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Failed to load insights.");
     }
   }
 
+  async function loadLocations() {
+    try {
+      const result = await fetchLocations();
+      setLocations(result.locations);
+    } catch {
+      setLocations([]);
+    }
+  }
+
   useEffect(() => {
-    loadInsights();
+    const controller = new AbortController();
+    loadInsights(controller.signal);
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sentiment]);
+  }, [sentiment, location]);
+
+  useEffect(() => {
+    loadLocations();
+  }, []);
+
+  async function handleSubmitted() {
+    await loadInsights();
+    await loadLocations();
+  }
 
   return (
     <main className="max-w-3xl mx-auto p-8 flex flex-col gap-10">
       <section className="flex flex-col gap-4">
         <h1 className="text-xl font-semibold">Submit reviews</h1>
-        <ReviewForm onSubmitted={loadInsights} />
+        <ReviewForm onSubmitted={handleSubmitted} />
       </section>
 
       <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-xl font-semibold">Fix this first</h2>
-          <SentimentFilter value={sentiment} onChange={setSentiment} />
+          <div className="flex items-center gap-3">
+            <LocationFilter value={location} onChange={setLocation} locations={locations} />
+            <SentimentFilter value={sentiment} onChange={setSentiment} />
+          </div>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         {insights.length === 0 && !error ? (

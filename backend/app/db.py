@@ -21,10 +21,16 @@ CREATE TABLE IF NOT EXISTS classifications (
     classified_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS location VARCHAR(200);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewer_name VARCHAR(200);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS rating INTEGER CHECK (rating BETWEEN 1 AND 5);
+
 CREATE INDEX IF NOT EXISTS idx_classifications_review_id
     ON classifications (review_id);
 CREATE INDEX IF NOT EXISTS idx_classifications_theme_sentiment
     ON classifications (theme, sentiment);
+CREATE INDEX IF NOT EXISTS idx_reviews_location
+    ON reviews (location);
 """
 
 

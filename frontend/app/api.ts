@@ -1,5 +1,8 @@
 import type {
+  CompareResponse,
+  CsvUploadResponse,
   InsightsResponse,
+  LocationsResponse,
   ReviewListResponse,
   ReviewsResponse,
   Sentiment,
@@ -28,24 +31,66 @@ export function submitReviews(texts: string[]): Promise<ReviewsResponse> {
   });
 }
 
-export function fetchReviews(params: {
-  page?: number;
-  limit?: number;
-  theme?: Theme | "";
-  sentiment?: Sentiment | "";
-}): Promise<ReviewListResponse> {
+export async function uploadReviewsCsv(
+  file: File,
+  location: string
+): Promise<CsvUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (location) formData.append("location", location);
+
+  const response = await fetch(`${API_URL}/reviews/csv`, {
+    method: "POST",
+    body: formData,
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok && response.status !== 422) {
+    const message = body?.error ?? `Request failed with status ${response.status}`;
+    throw new Error(message);
+  }
+  return body as CsvUploadResponse;
+}
+
+export function fetchReviews(
+  params: {
+    page?: number;
+    limit?: number;
+    theme?: Theme | "";
+    sentiment?: Sentiment | "";
+    location?: string;
+  },
+  signal?: AbortSignal
+): Promise<ReviewListResponse> {
   const query = new URLSearchParams();
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
   if (params.theme) query.set("theme", params.theme);
   if (params.sentiment) query.set("sentiment", params.sentiment);
-  return request<ReviewListResponse>(`/reviews?${query.toString()}`);
+  if (params.location) query.set("location", params.location);
+  return request<ReviewListResponse>(`/reviews?${query.toString()}`, { signal });
 }
 
-export function fetchInsights(sentiment?: Sentiment | ""): Promise<InsightsResponse> {
+export function fetchInsights(
+  sentiment?: Sentiment | "",
+  location?: string,
+  signal?: AbortSignal
+): Promise<InsightsResponse> {
   const query = new URLSearchParams();
   if (sentiment) query.set("sentiment", sentiment);
-  return request<InsightsResponse>(`/insights?${query.toString()}`);
+  if (location) query.set("location", location);
+  return request<InsightsResponse>(`/insights?${query.toString()}`, { signal });
+}
+
+export function fetchLocations(): Promise<LocationsResponse> {
+  return request<LocationsResponse>("/locations");
+}
+
+export function compareLocations(
+  locationA: string,
+  locationB: string
+): Promise<CompareResponse> {
+  const query = new URLSearchParams({ locations: `${locationA},${locationB}` });
+  return request<CompareResponse>(`/insights/compare?${query.toString()}`);
 }
 
 export async function deleteReview(id: number): Promise<void> {

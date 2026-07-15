@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { submitReviews } from "../api";
+import { submitReviews, uploadReviewsCsv } from "../api";
 
 function parseTextarea(raw: string): string[] {
   return raw
@@ -10,21 +10,14 @@ function parseTextarea(raw: string): string[] {
     .filter((line) => line.length > 0);
 }
 
-function parseCsv(raw: string): string[] {
-  return raw
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => line.split(",")[0].trim())
-    .filter((line) => line.length > 0);
-}
-
 export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void }) {
   const [text, setText] = useState("");
+  const [location, setLocation] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
-  async function submit(texts: string[]) {
+  async function submitText() {
+    const texts = parseTextarea(text);
     if (texts.length === 0) {
       setStatus("error");
       setMessage("Nothing to submit.");
@@ -49,13 +42,25 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
     }
   }
 
-  function handleCsvUpload(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleCsvUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => submit(parseCsv(String(reader.result ?? "")));
-    reader.readAsText(file);
     event.target.value = "";
+    if (!file) return;
+
+    setStatus("loading");
+    setMessage(null);
+    try {
+      const result = await uploadReviewsCsv(file, location.trim());
+      const parts = [`Classified ${result.created} review${result.created === 1 ? "" : "s"}.`];
+      if (result.skipped_empty) parts.push(`${result.skipped_empty} skipped (empty).`);
+      if (result.skipped_duplicate) parts.push(`${result.skipped_duplicate} skipped (duplicate).`);
+      setMessage(parts.join(" "));
+      setStatus("idle");
+      onSubmitted();
+    } catch (err) {
+      setStatus("error");
+      setMessage(err instanceof Error ? err.message : "CSV upload failed.");
+    }
   }
 
   return (
@@ -67,9 +72,15 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
         rows={6}
         className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-transparent p-3 text-sm"
       />
+      <input
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        placeholder="Location (optional, e.g. Vikings MOA)"
+        className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 text-sm"
+      />
       <div className="flex items-center gap-3">
         <button
-          onClick={() => submit(parseTextarea(text))}
+          onClick={submitText}
           disabled={status === "loading"}
           className="rounded-full bg-black text-white dark:bg-white dark:text-black px-4 py-2 text-sm disabled:opacity-50"
         >

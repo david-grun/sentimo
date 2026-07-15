@@ -12,6 +12,9 @@ export default function NavBar() {
       <Link href="/reviews" className="hover:underline">
         Reviews
       </Link>
+      <Link href="/compare" className="hover:underline">
+        Compare
+      </Link>
     </nav>
   );
 }

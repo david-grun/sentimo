@@ -3,6 +3,7 @@ uvicorn[standard]
 psycopg[binary]
 google-genai
 python-dotenv
+python-multipart
 pytest
 httpx
 ruff
