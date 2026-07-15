@@ -25,10 +25,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export function submitReviews(texts: string[]): Promise<ReviewsResponse> {
+export function submitReviews(texts: string[], location: string): Promise<ReviewsResponse> {
   return request<ReviewsResponse>("/reviews", {
     method: "POST",
-    body: JSON.stringify({ reviews: texts.map((text) => ({ text, source: "manual" })) }),
+    body: JSON.stringify({
+      reviews: texts.map((text) => ({ text, source: "manual" })),
+      location,
+    }),
   });
 }
 

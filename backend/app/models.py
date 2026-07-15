@@ -23,6 +23,7 @@ class ReviewIn(BaseModel):
 
 class ReviewsRequest(BaseModel):
     reviews: list[ReviewIn] = Field(min_length=1, max_length=50)
+    location: str = Field(min_length=1, max_length=200)
 
 
 class Classification(BaseModel):

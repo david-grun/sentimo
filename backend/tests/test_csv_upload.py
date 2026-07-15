@@ -30,7 +30,7 @@ def mock_classifier(
 
 
 def _upload(
-    client: TestClient, csv_text: str, location: str | None = None
+    client: TestClient, csv_text: str, location: str | None = "Vikings MOA"
 ) -> object:
     data = {"location": location} if location is not None else {}
     return client.post(
@@ -61,13 +61,16 @@ def test_upload_csv_with_reviewer_rating_date_review_headers(
     assert body["reviews"][0]["theme"] == "delivery"
 
 
-def test_upload_csv_without_location_is_optional(
+def test_upload_csv_without_location_returns_400(
     client: TestClient, mock_classifier
 ) -> None:
     mock_classifier([DELIVERY])
-    response = _upload(client, "Review\nCold pizza\n")
-    assert response.status_code == 201
-    assert response.json()["reviews"][0]["location"] is None
+    missing = _upload(client, "Review\nCold pizza\n", location=None)
+    assert missing.status_code == 400
+
+    blank = _upload(client, "Review\nCold pizza\n", location="   ")
+    assert blank.status_code == 400
+    assert client.get("/reviews").json()["total"] == 0
 
 
 def test_upload_csv_unmappable_headers_returns_400(client: TestClient) -> None:
@@ -134,10 +137,10 @@ def test_uploaded_reviews_have_csv_source(
     assert item["source"] == "csv"
 
 
-def test_existing_json_endpoint_still_works_without_location(
+def test_json_endpoint_stores_location(
     client: TestClient, mock_classifier
 ) -> None:
     mock_classifier([DELIVERY])
-    response = client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}]})
+    response = client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}], "location": "Main Branch"})
     assert response.status_code == 201
-    assert response.json()["reviews"][0]["location"] is None
+    assert response.json()["reviews"][0]["location"] == "Main Branch"

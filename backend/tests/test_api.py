@@ -40,8 +40,19 @@ def mock_classifier(
 
 def _post_reviews(client: TestClient, texts: list[str]) -> object:
     return client.post(
-        "/reviews", json={"reviews": [{"text": text} for text in texts]}
+        "/reviews",
+        json={"reviews": [{"text": text} for text in texts], "location": "Main Branch"},
     )
+
+
+def test_create_reviews_without_location_returns_400(client: TestClient) -> None:
+    response = client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}]})
+    assert response.status_code == 400
+
+    blank = client.post(
+        "/reviews", json={"reviews": [{"text": "Cold pizza"}], "location": "   "}
+    )
+    assert blank.status_code == 400
 
 
 def test_health(client: TestClient) -> None:

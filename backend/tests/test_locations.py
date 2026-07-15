@@ -69,13 +69,17 @@ def test_locations_endpoint_returns_counts_and_avg_rating(
     assert by_name["Vikings North EDSA"]["review_count"] == 2
 
 
-def test_reviews_without_location_still_work(
+def test_manual_reviews_appear_in_locations(
     client: TestClient, mock_classifier
 ) -> None:
     mock_classifier([DELIVERY])
-    response = client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}]})
+    response = client.post(
+        "/reviews",
+        json={"reviews": [{"text": "Cold pizza"}], "location": "Main Branch"},
+    )
     assert response.status_code == 201
-    assert client.get("/locations").json()["locations"] == []
+    locations = client.get("/locations").json()["locations"]
+    assert [loc["location"] for loc in locations] == ["Main Branch"]
 
 
 def test_reviews_filter_by_location(client: TestClient, mock_classifier) -> None:

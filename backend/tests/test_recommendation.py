@@ -35,7 +35,7 @@ def test_recommendation_for_existing_theme(
     client: TestClient, mock_classifier, mock_recommendation
 ) -> None:
     mock_classifier([DELIVERY])
-    client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}]})
+    client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}], "location": "Main Branch"})
     mock_recommendation("Fix your delivery packaging and driver ETAs.")
 
     response = client.get("/insights/delivery/recommendation")
@@ -59,7 +59,7 @@ def test_recommendation_falls_back_on_gemini_error(
     client: TestClient, mock_classifier, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     mock_classifier([DELIVERY])
-    client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}]})
+    client.post("/reviews", json={"reviews": [{"text": "Cold pizza"}], "location": "Main Branch"})
 
     def _raise(*args: object, **kwargs: object) -> str:
         raise RuntimeError("Gemini unavailable")

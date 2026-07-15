@@ -36,10 +36,17 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
   async function submit() {
     setMessage(null);
 
+    const trimmedLocation = location.trim();
+    if (!trimmedLocation) {
+      setStatus("error");
+      setMessage("Location is required — enter which branch these reviews are for.");
+      return;
+    }
+
     if (file) {
       setStatus("loading");
       try {
-        const result = await uploadReviewsCsv(file, location.trim());
+        const result = await uploadReviewsCsv(file, trimmedLocation);
         setMessage(resultMessage(result.created, result.skipped_empty, result.skipped_duplicate));
         setStatus("idle");
         setFile(null);
@@ -64,7 +71,7 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
     }
     setStatus("loading");
     try {
-      const result = await submitReviews(texts);
+      const result = await submitReviews(texts, trimmedLocation);
       setMessage(resultMessage(result.created, 0, result.skipped_duplicate));
       setStatus("idle");
       setText("");
@@ -87,7 +94,7 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
       <input
         value={location}
         onChange={(e) => setLocation(e.target.value)}
-        placeholder="Location (optional, e.g. Vikings MOA)"
+        placeholder="Location (required, e.g. Vikings MOA)"
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
       <div className="flex flex-wrap items-center gap-3">

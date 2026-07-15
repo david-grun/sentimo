@@ -55,6 +55,13 @@ def health() -> dict[str, str]:
 
 @app.post("/reviews")
 def create_reviews(payload: ReviewsRequest) -> JSONResponse:
+    location = payload.location.strip()
+    if not location:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "location is required", "detail": None},
+        )
+
     with db.get_connection() as conn, conn.cursor() as cur:
         all_texts = [review.text for review in payload.reviews]
         cur.execute("SELECT text FROM reviews WHERE text = ANY(%s)", (all_texts,))
@@ -74,8 +81,12 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
         review_ids: list[int] = []
         for review in new_reviews:
             cur.execute(
-                "INSERT INTO reviews (text, source) VALUES (%s, %s) RETURNING id",
-                (review.text, review.source),
+                """
+                INSERT INTO reviews (text, source, location)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+                (review.text, review.source, location),
             )
             review_ids.append(cur.fetchone()[0])
 
@@ -91,7 +102,9 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
             review_ids, new_reviews, classifications
         ):
             if classification is None:
-                enriched.append(EnrichedReview(id=review_id, text=review.text))
+                enriched.append(
+                    EnrichedReview(id=review_id, text=review.text, location=location)
+                )
                 continue
             cur.execute(
                 """
@@ -109,7 +122,12 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
                 ),
             )
             enriched.append(
-                EnrichedReview(id=review_id, text=review.text, **classification.model_dump())
+                EnrichedReview(
+                    id=review_id,
+                    text=review.text,
+                    location=location,
+                    **classification.model_dump(),
+                )
             )
 
     body = ReviewsResponse(
@@ -129,9 +147,14 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
 @app.post("/reviews/csv")
 async def upload_reviews_csv(
     file: UploadFile = File(...),
-    location: str | None = Form(default=None),
+    location: str = Form(...),
 ) -> JSONResponse:
-    location = (location or "").strip() or None
+    location = location.strip()
+    if not location:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "location is required", "detail": None},
+        )
 
     raw = await file.read()
     try:
