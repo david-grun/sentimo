@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { deleteReview, fetchLocations, fetchReviews } from "../api";
-import LocationFilter from "../components/LocationFilter";
-import ReviewRow from "../components/ReviewRow";
-import SentimentFilter from "../components/SentimentFilter";
-import ThemeFilter from "../components/ThemeFilter";
-import type { LocationSummary, ReviewItem, Sentiment, Theme } from "../types";
+import { deleteReview, fetchLocations, fetchReviews } from "../../api";
+import LocationFilter from "../../components/LocationFilter";
+import ReviewRow from "../../components/ReviewRow";
+import SentimentFilter from "../../components/SentimentFilter";
+import ThemeFilter from "../../components/ThemeFilter";
+import type { LocationSummary, ReviewItem, Sentiment, Theme } from "../../types";
 
 const PAGE_SIZE = 20;
 
@@ -53,9 +53,12 @@ export default function ReviewsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <main className="max-w-4xl mx-auto p-8 flex flex-col gap-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold">Reviews</h1>
+    <main className="max-w-6xl mx-auto px-8 py-10 flex flex-col gap-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Reviews</h1>
+          <p className="text-sm text-slate-500 mt-1">{total} review{total === 1 ? "" : "s"} total</p>
+        </div>
         <div className="flex items-center gap-3">
           <LocationFilter
             value={location}
@@ -82,31 +85,33 @@ export default function ReviewsPage() {
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-rose-600">{error}</p>}
 
-      <table className="w-full text-sm text-left">
-        <thead>
-          <tr className="border-b border-black/20 dark:border-white/20">
-            <th className="py-2 pr-4">Review</th>
-            <th className="py-2 pr-4">Location</th>
-            <th className="py-2 pr-4">Theme</th>
-            <th className="py-2 pr-4">Sentiment</th>
-            <th className="py-2 pr-4">Severity</th>
-            <th className="py-2 pr-4"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <ReviewRow key={item.id} review={item} onDelete={handleDelete} />
-          ))}
-        </tbody>
-      </table>
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
+              <th className="py-3 px-4 font-medium">Review</th>
+              <th className="py-3 px-4 font-medium">Location</th>
+              <th className="py-3 px-4 font-medium">Theme</th>
+              <th className="py-3 px-4 font-medium">Sentiment</th>
+              <th className="py-3 px-4 font-medium">Severity</th>
+              <th className="py-3 px-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <ReviewRow key={item.id} review={item} onDelete={handleDelete} />
+            ))}
+          </tbody>
+        </table>
 
-      {items.length === 0 && !error && (
-        <p className="text-sm text-black/50 dark:text-white/50">No reviews found.</p>
-      )}
+        {items.length === 0 && !error && (
+          <p className="text-sm text-slate-500 px-4 py-10 text-center">No reviews found.</p>
+        )}
+      </div>
 
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between text-sm text-slate-500">
         <span>
           Page {page} of {totalPages} ({total} total)
         </span>
@@ -114,14 +119,14 @@ export default function ReviewsPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="rounded-full border border-black/20 dark:border-white/20 px-3 py-1 disabled:opacity-40"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
           >
             prev
           </button>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="rounded-full border border-black/20 dark:border-white/20 px-3 py-1 disabled:opacity-40"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
           >
             next
           </button>

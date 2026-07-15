@@ -3,17 +3,17 @@ import SeverityBar from "./SeverityBar";
 
 export default function InsightCard({ insight }: { insight: Insight }) {
   return (
-    <div className="rounded-lg border border-black/10 dark:border-white/10 p-4 flex flex-col gap-2">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
-        <h3 className="font-semibold capitalize">
+        <h3 className="font-semibold capitalize text-slate-900">
           {insight.theme.replace(/_/g, " ")}
         </h3>
-        <span className="text-sm text-black/50 dark:text-white/50">
+        <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
           score {insight.score.toFixed(1)}
         </span>
       </div>
       <SeverityBar severity={insight.avg_severity} />
-      <div className="flex justify-between text-sm text-black/60 dark:text-white/60">
+      <div className="flex justify-between text-sm text-slate-500">
         <span>{insight.count} review{insight.count === 1 ? "" : "s"}</span>
         <span>avg severity {insight.avg_severity.toFixed(1)}</span>
       </div>

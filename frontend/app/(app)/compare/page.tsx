@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { compareLocations, fetchLocations } from "../api";
-import CompareCard from "../components/CompareCard";
-import type { CompareResponse, LocationSummary } from "../types";
+import { compareLocations, fetchLocations } from "../../api";
+import CompareCard from "../../components/CompareCard";
+import type { CompareResponse, LocationSummary } from "../../types";
 
 export default function ComparePage() {
   const [locations, setLocations] = useState<LocationSummary[]>([]);
@@ -48,14 +48,19 @@ export default function ComparePage() {
     : [];
 
   return (
-    <main className="max-w-4xl mx-auto p-8 flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Compare locations</h1>
+    <main className="max-w-5xl mx-auto px-8 py-10 flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Compare locations</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          See which location is performing better, theme by theme.
+        </p>
+      </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card flex items-center gap-3 flex-wrap">
         <select
           value={locationA}
           onChange={(e) => setLocationA(e.target.value)}
-          className="rounded-full border border-black/20 dark:border-white/20 bg-transparent px-3 py-1 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">Location A</option>
           {locations.map((loc) => (
@@ -64,11 +69,11 @@ export default function ComparePage() {
             </option>
           ))}
         </select>
-        <span className="text-sm text-black/50 dark:text-white/50">vs</span>
+        <span className="text-sm text-slate-400">vs</span>
         <select
           value={locationB}
           onChange={(e) => setLocationB(e.target.value)}
-          className="rounded-full border border-black/20 dark:border-white/20 bg-transparent px-3 py-1 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">Location B</option>
           {locations.map((loc) => (
@@ -80,16 +85,16 @@ export default function ComparePage() {
         <button
           onClick={handleCompare}
           disabled={loading}
-          className="rounded-full bg-black text-white dark:bg-white dark:text-black px-4 py-2 text-sm disabled:opacity-50"
+          className="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-indigo-500 disabled:opacity-50 transition-colors"
         >
           {loading ? "Comparing..." : "Compare"}
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-rose-600">{error}</p>}
 
       {locations.length === 0 && !error && (
-        <p className="text-sm text-black/50 dark:text-white/50">
+        <p className="text-sm text-slate-500 rounded-xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center">
           No locations yet — upload a CSV with a location tag first.
         </p>
       )}
@@ -102,15 +107,15 @@ export default function ComparePage() {
           </div>
 
           {complaintThemes.length > 0 && (
-            <div className="rounded-lg border border-black/10 dark:border-white/10 p-4">
-              <h3 className="font-semibold mb-3">Which location is performing better</h3>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+              <h3 className="font-semibold text-slate-900 mb-3">Which location is performing better</h3>
               <table className="w-full text-sm text-left">
                 <thead>
-                  <tr className="border-b border-black/20 dark:border-white/20">
-                    <th className="py-2 pr-4">Theme</th>
-                    <th className="py-2 pr-4">{a.location}</th>
-                    <th className="py-2 pr-4">{b.location}</th>
-                    <th className="py-2 pr-4">Better</th>
+                  <tr className="border-b border-slate-200 text-slate-500">
+                    <th className="py-2 pr-4 font-medium">Theme</th>
+                    <th className="py-2 pr-4 font-medium">{a.location}</th>
+                    <th className="py-2 pr-4 font-medium">{b.location}</th>
+                    <th className="py-2 pr-4 font-medium">Better</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,15 +127,17 @@ export default function ComparePage() {
                     const winner =
                       countA === countB ? "tie" : countA < countB ? a.location : b.location;
                     return (
-                      <tr key={theme} className="border-b border-black/10 dark:border-white/10">
-                        <td className="py-2 pr-4 capitalize">{theme.replace(/_/g, " ")}</td>
-                        <td className="py-2 pr-4">{countA}</td>
-                        <td className="py-2 pr-4">{countB}</td>
-                        <td className="py-2 pr-4">
+                      <tr key={theme} className="border-b border-slate-100">
+                        <td className="py-2.5 pr-4 capitalize text-slate-700">
+                          {theme.replace(/_/g, " ")}
+                        </td>
+                        <td className="py-2.5 pr-4 text-slate-700">{countA}</td>
+                        <td className="py-2.5 pr-4 text-slate-700">{countB}</td>
+                        <td className="py-2.5 pr-4">
                           {winner === "tie" ? (
-                            <span className="text-black/50 dark:text-white/50">tie</span>
+                            <span className="text-slate-400">tie</span>
                           ) : (
-                            <span className="text-emerald-600 dark:text-emerald-400">{winner}</span>
+                            <span className="text-emerald-600 font-medium">{winner}</span>
                           )}
                         </td>
                       </tr>

@@ -12,15 +12,15 @@ export default function SentimentFilter({
   onChange: (value: Sentiment | "") => void;
 }) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1.5">
       {OPTIONS.map((option) => (
         <button
           key={option || "all"}
           onClick={() => onChange(option)}
-          className={`rounded-full px-3 py-1 text-sm border transition-colors ${
+          className={`rounded-full px-3 py-1 text-sm font-medium border transition-colors ${
             value === option
-              ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
-              : "border-black/20 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"
+              ? "bg-indigo-600 text-white border-indigo-600"
+              : "border-slate-300 text-slate-600 hover:bg-slate-50"
           }`}
         >
           {option === "" ? "all" : option}
