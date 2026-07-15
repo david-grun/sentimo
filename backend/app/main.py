@@ -238,11 +238,13 @@ def list_reviews(
     theme: Theme | None = None,
     sentiment: Sentiment | None = None,
     location: str | None = None,
+    min_severity: int | None = Query(default=None, ge=1, le=5),
 ) -> ReviewListResponse:
     params = {
         "theme": theme,
         "sentiment": sentiment,
         "location": location,
+        "min_severity": min_severity,
         "limit": limit,
         "offset": (page - 1) * limit,
     }
@@ -250,7 +252,13 @@ def list_reviews(
         (%(theme)s::text IS NULL OR c.theme = %(theme)s)
         AND (%(sentiment)s::text IS NULL OR c.sentiment = %(sentiment)s)
         AND (%(location)s::text IS NULL OR r.location = %(location)s)
+        AND (%(min_severity)s::int IS NULL OR c.severity >= %(min_severity)s)
     """
+    order_by = (
+        "c.severity DESC NULLS LAST, r.created_at DESC, r.id DESC"
+        if min_severity is not None
+        else "r.created_at DESC, r.id DESC"
+    )
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             f"""
@@ -271,7 +279,7 @@ def list_reviews(
             FROM reviews r
             LEFT JOIN classifications c ON c.review_id = r.id
             WHERE {where}
-            ORDER BY r.created_at DESC, r.id DESC
+            ORDER BY {order_by}
             LIMIT %(limit)s OFFSET %(offset)s
             """,
             params,

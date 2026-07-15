@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchInsights, fetchLocations } from "../../api";
+import CriticalAlerts from "../../components/CriticalAlerts";
 import InsightCard from "../../components/InsightCard";
 import LocationFilter from "../../components/LocationFilter";
 import ReviewForm from "../../components/ReviewForm";
@@ -14,6 +15,7 @@ export default function DashboardPage() {
   const [location, setLocation] = useState("");
   const [locations, setLocations] = useState<LocationSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   async function loadInsights(signal?: AbortSignal) {
     try {
@@ -49,6 +51,7 @@ export default function DashboardPage() {
   async function handleSubmitted() {
     await loadInsights();
     await loadLocations();
+    setRefreshKey((k) => k + 1);
   }
 
   return (
@@ -59,6 +62,8 @@ export default function DashboardPage() {
           Paste reviews or upload a CSV — Sentimo classifies them and ranks what to fix first.
         </p>
       </div>
+
+      <CriticalAlerts key={refreshKey} location={location} />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">

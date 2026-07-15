@@ -106,6 +106,19 @@ def test_list_reviews_pagination_and_filters(
     assert bad.status_code == 400
 
 
+def test_list_reviews_min_severity_filter_and_ordering(
+    client: TestClient, mock_classifier
+) -> None:
+    mock_classifier([AMBIANCE, DELIVERY, PRICING])
+    _post_reviews(client, ["Lovely", "Cold and late", "Too pricey"])
+
+    critical = client.get("/reviews", params={"min_severity": 3}).json()
+    assert critical["total"] == 2
+    severities = [item["severity"] for item in critical["items"]]
+    assert severities == sorted(severities, reverse=True)
+    assert all(s >= 3 for s in severities)
+
+
 def test_insights_ranked_and_filtered(client: TestClient, mock_classifier) -> None:
     mock_classifier([DELIVERY, DELIVERY, AMBIANCE, PRICING])
     _post_reviews(client, ["Cold", "Late", "Lovely", "Expensive"])

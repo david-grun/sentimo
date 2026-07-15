@@ -59,6 +59,7 @@ export function fetchReviews(
     theme?: Theme | "";
     sentiment?: Sentiment | "";
     location?: string;
+    minSeverity?: number;
   },
   signal?: AbortSignal
 ): Promise<ReviewListResponse> {
@@ -68,6 +69,7 @@ export function fetchReviews(
   if (params.theme) query.set("theme", params.theme);
   if (params.sentiment) query.set("sentiment", params.sentiment);
   if (params.location) query.set("location", params.location);
+  if (params.minSeverity) query.set("min_severity", String(params.minSeverity));
   return request<ReviewListResponse>(`/reviews?${query.toString()}`, { signal });
 }
 

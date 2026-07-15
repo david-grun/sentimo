@@ -21,7 +21,7 @@ export default function ReviewRow({
 }) {
   return (
     <tr className="border-b border-slate-100 align-top hover:bg-slate-50/60">
-      <td className="py-3 pr-4 max-w-md text-slate-700 whitespace-pre-wrap">{review.text}</td>
+      <td className="py-3 pr-4 max-w-md text-slate-700">{review.text}</td>
       <td className="py-3 pr-4 text-slate-500">{review.location ?? "—"}</td>
       <td className="py-3 pr-4 capitalize text-slate-700">
         {review.theme?.replace(/_/g, " ") ?? "—"}
