@@ -61,6 +61,36 @@ def test_create_reviews_success(client: TestClient, mock_classifier) -> None:
     assert body["reviews"][1]["sentiment"] == "positive"
 
 
+def test_create_reviews_skips_existing_duplicates(
+    client: TestClient, mock_classifier
+) -> None:
+    mock_classifier([DELIVERY])
+    _post_reviews(client, ["Cold pizza"])
+
+    mock_classifier([AMBIANCE])
+    response = _post_reviews(client, ["Cold pizza", "Lovely staff"])
+    assert response.status_code == 201
+    body = response.json()
+    assert body["created"] == 1
+    assert body["skipped_duplicate"] == 1
+    assert body["reviews"][0]["text"] == "Lovely staff"
+    assert client.get("/reviews").json()["total"] == 2
+
+
+def test_create_reviews_all_duplicates_creates_nothing(
+    client: TestClient, mock_classifier
+) -> None:
+    mock_classifier([DELIVERY])
+    _post_reviews(client, ["Cold pizza"])
+
+    response = _post_reviews(client, ["Cold pizza", "Cold pizza"])
+    assert response.status_code == 201
+    body = response.json()
+    assert body["created"] == 0
+    assert body["skipped_duplicate"] == 2
+    assert client.get("/reviews").json()["total"] == 1
+
+
 def test_create_reviews_empty_text_returns_400(client: TestClient) -> None:
     response = _post_reviews(client, [""])
     assert response.status_code == 400

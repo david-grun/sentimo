@@ -76,7 +76,11 @@ export default function InsightCard({
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
         </svg>
-        {expanded ? "Hide recommendation" : "What should I do about this?"}
+        {expanded
+          ? "Hide recommendation"
+          : sentiment === "positive"
+            ? "How do I keep this up?"
+            : "What should I do about this?"}
       </button>
 
       {expanded && (

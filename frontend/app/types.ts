@@ -64,6 +64,7 @@ export interface RecommendationResponse {
 
 export interface ReviewsResponse {
   created: number;
+  skipped_duplicate: number;
   reviews: EnrichedReview[];
 }
 

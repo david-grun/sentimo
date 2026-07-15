@@ -55,11 +55,24 @@ def health() -> dict[str, str]:
 
 @app.post("/reviews")
 def create_reviews(payload: ReviewsRequest) -> JSONResponse:
-    texts = [review.text for review in payload.reviews]
-
     with db.get_connection() as conn, conn.cursor() as cur:
-        review_ids: list[int] = []
+        all_texts = [review.text for review in payload.reviews]
+        cur.execute("SELECT text FROM reviews WHERE text = ANY(%s)", (all_texts,))
+        existing = {row[0] for row in cur.fetchall()}
+
+        seen: set[str] = set()
+        new_reviews = []
+        skipped_duplicate = 0
         for review in payload.reviews:
+            if review.text in existing or review.text in seen:
+                skipped_duplicate += 1
+                continue
+            seen.add(review.text)
+            new_reviews.append(review)
+
+        texts = [review.text for review in new_reviews]
+        review_ids: list[int] = []
+        for review in new_reviews:
             cur.execute(
                 "INSERT INTO reviews (text, source) VALUES (%s, %s) RETURNING id",
                 (review.text, review.source),
@@ -67,7 +80,7 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
             review_ids.append(cur.fetchone()[0])
 
         try:
-            classifications = classify_reviews(texts)
+            classifications = classify_reviews(texts) if texts else []
         except Exception:
             # Gemini unreachable or errored: reviews are still inserted,
             # every classification in the batch is marked failed.
@@ -75,7 +88,7 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
 
         enriched: list[EnrichedReview] = []
         for review_id, review, classification in zip(
-            review_ids, payload.reviews, classifications
+            review_ids, new_reviews, classifications
         ):
             if classification is None:
                 enriched.append(EnrichedReview(id=review_id, text=review.text))
@@ -99,7 +112,9 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
                 EnrichedReview(id=review_id, text=review.text, **classification.model_dump())
             )
 
-    body = ReviewsResponse(created=len(review_ids), reviews=enriched)
+    body = ReviewsResponse(
+        created=len(review_ids), skipped_duplicate=skipped_duplicate, reviews=enriched
+    )
     if any(classification is None for classification in classifications):
         return JSONResponse(
             status_code=422,
@@ -147,17 +162,25 @@ async def upload_reviews_csv(
             },
         )
 
-    if len(parsed.reviews) > 50:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "max 50 reviews per batch", "detail": None},
+    with db.get_connection() as conn, conn.cursor() as cur:
+        all_texts = [review.text for review in parsed.reviews]
+        cur.execute("SELECT text FROM reviews WHERE text = ANY(%s)", (all_texts,))
+        existing = {row[0] for row in cur.fetchall()}
+        new_reviews = [r for r in parsed.reviews if r.text not in existing]
+        skipped_duplicate = parsed.skipped_duplicate + (
+            len(parsed.reviews) - len(new_reviews)
         )
 
-    texts = [review.text for review in parsed.reviews]
+        if len(new_reviews) > 50:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "max 50 reviews per batch", "detail": None},
+            )
 
-    with db.get_connection() as conn, conn.cursor() as cur:
+        texts = [review.text for review in new_reviews]
+
         review_ids: list[int] = []
-        for review in parsed.reviews:
+        for review in new_reviews:
             cur.execute(
                 """
                 INSERT INTO reviews (text, source, location, reviewer_name, rating)
@@ -169,13 +192,13 @@ async def upload_reviews_csv(
             review_ids.append(cur.fetchone()[0])
 
         try:
-            classifications = classify_reviews(texts)
+            classifications = classify_reviews(texts) if texts else []
         except Exception:
             classifications = [None] * len(texts)
 
         enriched: list[EnrichedReview] = []
         for review_id, review, classification in zip(
-            review_ids, parsed.reviews, classifications
+            review_ids, new_reviews, classifications
         ):
             if classification is None:
                 enriched.append(
@@ -217,7 +240,7 @@ async def upload_reviews_csv(
     body = CsvUploadResponse(
         created=len(review_ids),
         skipped_empty=parsed.skipped_empty,
-        skipped_duplicate=parsed.skipped_duplicate,
+        skipped_duplicate=skipped_duplicate,
         reviews=enriched,
     )
     if any(classification is None for classification in classifications):

@@ -11,6 +11,7 @@ import type { Insight, LocationSummary, Sentiment } from "../../types";
 
 export default function DashboardPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [praise, setPraise] = useState<Insight[]>([]);
   const [sentiment, setSentiment] = useState<Sentiment | "">("negative");
   const [location, setLocation] = useState("");
   const [locations, setLocations] = useState<LocationSummary[]>([]);
@@ -25,6 +26,16 @@ export default function DashboardPage() {
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Failed to load insights.");
+    }
+  }
+
+  async function loadPraise(signal?: AbortSignal) {
+    try {
+      const result = await fetchInsights("positive", location, signal);
+      setPraise([...result.insights].sort((a, b) => b.count - a.count));
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setPraise([]);
     }
   }
 
@@ -45,11 +56,19 @@ export default function DashboardPage() {
   }, [sentiment, location]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    loadPraise(controller.signal);
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
+
+  useEffect(() => {
     loadLocations();
   }, []);
 
   async function handleSubmitted() {
     await loadInsights();
+    await loadPraise();
     await loadLocations();
     setRefreshKey((k) => k + 1);
   }
@@ -100,6 +119,27 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      {praise.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Keep doing this</h2>
+            <p className="text-sm text-slate-500 mt-0.5">
+              What customers praise — protect these strengths.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {praise.map((insight) => (
+              <InsightCard
+                key={insight.theme}
+                insight={insight}
+                sentiment="positive"
+                location={location}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

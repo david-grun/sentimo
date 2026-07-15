@@ -47,6 +47,7 @@ class EnrichedReview(BaseModel):
 
 class ReviewsResponse(BaseModel):
     created: int
+    skipped_duplicate: int = 0
     reviews: list[EnrichedReview]
 
 

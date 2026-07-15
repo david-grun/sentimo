@@ -83,6 +83,21 @@ def test_upload_csv_all_empty_returns_400(client: TestClient) -> None:
     assert response.status_code == 400
 
 
+def test_upload_same_csv_twice_skips_existing_reviews(
+    client: TestClient, mock_classifier
+) -> None:
+    mock_classifier([DELIVERY, AMBIANCE])
+    csv_text = "Review\nCold pizza\nLovely staff\n"
+    assert _upload(client, csv_text).status_code == 201
+
+    second = _upload(client, csv_text)
+    assert second.status_code == 201
+    body = second.json()
+    assert body["created"] == 0
+    assert body["skipped_duplicate"] == 2
+    assert client.get("/reviews").json()["total"] == 2
+
+
 def test_upload_csv_skips_empty_and_dedupes(
     client: TestClient, mock_classifier
 ) -> None:
