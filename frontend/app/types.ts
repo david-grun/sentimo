@@ -29,6 +29,7 @@ export interface EnrichedReview {
   location: string | null;
   reviewer_name: string | null;
   rating: number | null;
+  review_date: string | null;
   theme: Theme | null;
   sentiment: Sentiment | null;
   severity: number | null;

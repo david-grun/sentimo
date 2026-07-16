@@ -10,11 +10,25 @@ function parseTextarea(raw: string): string[] {
     .filter((line) => line.length > 0);
 }
 
-function resultMessage(created: number, skippedEmpty: number, skippedDuplicate: number): string {
-  const parts = [`Classified ${created} review${created === 1 ? "" : "s"}.`];
+function resultMessage(
+  created: number,
+  skippedEmpty: number,
+  skippedDuplicate: number,
+  unclassified: number
+): string {
+  const parts = [`Classified ${created - unclassified} review${created - unclassified === 1 ? "" : "s"}.`];
   if (skippedEmpty) parts.push(`${skippedEmpty} skipped (empty).`);
   if (skippedDuplicate) parts.push(`${skippedDuplicate} skipped (duplicate).`);
+  if (unclassified) {
+    parts.push(
+      `${unclassified} saved but couldn't be classified — the AI service may be down.`
+    );
+  }
   return parts.join(" ");
+}
+
+function countUnclassified(reviews: { theme: string | null }[] | undefined): number {
+  return (reviews ?? []).filter((review) => review.theme === null).length;
 }
 
 export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void }) {
@@ -47,7 +61,14 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
       setStatus("loading");
       try {
         const result = await uploadReviewsCsv(file, trimmedLocation);
-        setMessage(resultMessage(result.created, result.skipped_empty, result.skipped_duplicate));
+        setMessage(
+          resultMessage(
+            result.created,
+            result.skipped_empty,
+            result.skipped_duplicate,
+            countUnclassified(result.reviews)
+          )
+        );
         setStatus("idle");
         setFile(null);
         onSubmitted();
@@ -72,7 +93,14 @@ export default function ReviewForm({ onSubmitted }: { onSubmitted: () => void })
     setStatus("loading");
     try {
       const result = await submitReviews(texts, trimmedLocation);
-      setMessage(resultMessage(result.created, 0, result.skipped_duplicate));
+      setMessage(
+        resultMessage(
+          result.created,
+          0,
+          result.skipped_duplicate,
+          countUnclassified(result.reviews)
+        )
+      );
       setStatus("idle");
       setText("");
       onSubmitted();

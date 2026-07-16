@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS classifications (
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS location VARCHAR(200);
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewer_name VARCHAR(200);
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS rating INTEGER CHECK (rating BETWEEN 1 AND 5);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS review_date DATE;
 
 CREATE INDEX IF NOT EXISTS idx_classifications_review_id
     ON classifications (review_id);

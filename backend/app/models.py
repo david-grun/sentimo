@@ -39,6 +39,7 @@ class EnrichedReview(BaseModel):
     location: str | None = None
     reviewer_name: str | None = None
     rating: int | None = None
+    review_date: str | None = None
 
     theme: Theme | None = None
     sentiment: Sentiment | None = None
@@ -67,6 +68,7 @@ class ReviewItem(BaseModel):
     location: str | None = None
     reviewer_name: str | None = None
     rating: int | None = None
+    review_date: str | None = None
     theme: Theme | None = None
     sentiment: Sentiment | None = None
     severity: int | None = None

@@ -64,13 +64,13 @@ export default function ReviewsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <main className="max-w-6xl mx-auto px-8 py-10 flex flex-col gap-6">
+    <main className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10 flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Reviews</h1>
           <p className="text-sm text-slate-500 mt-1">{total} review{total === 1 ? "" : "s"} total</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <LocationFilter
             value={location}
             onChange={(value) => {
@@ -106,7 +106,8 @@ export default function ReviewsPage() {
       {error && <p className="text-sm text-rose-600">{error}</p>}
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
-        <table className="w-full text-sm text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-sm text-left">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
               <th className="py-3 px-5 font-medium">Review</th>
@@ -144,6 +145,7 @@ export default function ReviewsPage() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {items.length === 0 && !error && (
           <p className="text-sm text-slate-500 px-4 py-10 text-center">No reviews found.</p>

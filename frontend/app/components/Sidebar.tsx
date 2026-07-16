@@ -44,7 +44,37 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex w-60 shrink-0 flex-col bg-slate-950 text-slate-300 min-h-screen">
+    <>
+      {/* Compact top bar for narrow viewports (small screens or high browser zoom),
+          where the sidebar is hidden — without it there would be no navigation. */}
+      <header className="md:hidden sticky top-0 z-10 flex items-center justify-between gap-3 bg-slate-950 px-4 py-3 text-slate-300">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Image src="/logo-mark.png" alt="Sentimo logo" width={28} height={28} />
+          <span className="hidden sm:inline text-base font-semibold text-white tracking-tight">
+            Sentimo
+          </span>
+        </Link>
+        <nav className="flex items-center gap-1 overflow-x-auto">
+          {LINKS.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`rounded-lg px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                  active
+                    ? "bg-violet-500/15 text-violet-300"
+                    : "text-slate-400 hover:bg-white/5 hover:text-slate-100"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </header>
+
+      <aside className="hidden md:flex w-60 shrink-0 flex-col bg-slate-950 text-slate-300 min-h-screen">
       <div className="px-5 py-6">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo-mark.png" alt="Sentimo logo" width={34} height={34} />
@@ -84,6 +114,7 @@ export default function Sidebar() {
       <div className="mt-auto px-5 py-6 text-xs text-slate-500">
         Powered by Gemini
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

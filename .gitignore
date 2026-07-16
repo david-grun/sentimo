@@ -219,6 +219,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Personal learning / interview docs — local only, never committed
+PROJECT_EXPLAINED.md
+INTERVIEW_NOTES.md
+
 # Node / Next.js (frontend)
 node_modules/
 .next/

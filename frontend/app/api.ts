@@ -11,18 +11,35 @@ import type {
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
+
+function apiKeyHeader(): Record<string, string> {
+  return API_KEY ? { "X-API-Key": API_KEY } : {};
+}
+
+// On 422 (partial classification failure) the backend nests the real payload
+// under `detail` — unwrap it so callers always get the response shape they expect.
+function unwrapBody<T>(response: Response, body: unknown): T {
+  if (response.status === 422) {
+    const detail = (body as { detail?: T } | null)?.detail;
+    if (detail) return detail;
+  }
+  return body as T;
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: { "Content-Type": "application/json", ...apiKeyHeader(), ...init?.headers },
   });
   const body = await response.json().catch(() => null);
   if (!response.ok && response.status !== 422) {
-    const message = body?.error ?? `Request failed with status ${response.status}`;
+    const message =
+      (body as { error?: string } | null)?.error ??
+      `Request failed with status ${response.status}`;
     throw new Error(message);
   }
-  return body as T;
+  return unwrapBody<T>(response, body);
 }
 
 export function submitReviews(texts: string[], location: string): Promise<ReviewsResponse> {
@@ -45,14 +62,17 @@ export async function uploadReviewsCsv(
 
   const response = await fetch(`${API_URL}/reviews/csv`, {
     method: "POST",
+    headers: apiKeyHeader(),
     body: formData,
   });
   const body = await response.json().catch(() => null);
   if (!response.ok && response.status !== 422) {
-    const message = body?.error ?? `Request failed with status ${response.status}`;
+    const message =
+      (body as { error?: string } | null)?.error ??
+      `Request failed with status ${response.status}`;
     throw new Error(message);
   }
-  return body as CsvUploadResponse;
+  return unwrapBody<CsvUploadResponse>(response, body);
 }
 
 export function fetchReviews(
@@ -113,14 +133,20 @@ export function compareLocations(
 }
 
 export async function deleteReview(id: number): Promise<void> {
-  const response = await fetch(`${API_URL}/reviews/${id}`, { method: "DELETE" });
+  const response = await fetch(`${API_URL}/reviews/${id}`, {
+    method: "DELETE",
+    headers: apiKeyHeader(),
+  });
   if (!response.ok) {
     throw new Error(`Failed to delete review ${id}`);
   }
 }
 
 export async function deleteAllReviews(): Promise<number> {
-  const response = await fetch(`${API_URL}/reviews`, { method: "DELETE" });
+  const response = await fetch(`${API_URL}/reviews`, {
+    method: "DELETE",
+    headers: apiKeyHeader(),
+  });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
     throw new Error(body?.error ?? "Failed to delete reviews");

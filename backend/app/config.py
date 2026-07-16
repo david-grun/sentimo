@@ -15,6 +15,14 @@ ALLOWED_ORIGINS: list[str] = [
     if origin.strip()
 ]
 
+# Optional shared secret. When set, mutating endpoints require an
+# X-API-Key header with this value; when empty, auth is disabled (local dev).
+API_KEY: str = os.getenv("API_KEY", "")
+
+# Render injects RENDER_GIT_COMMIT on every deploy; used by GET /version
+# to verify which commit is actually live.
+GIT_COMMIT: str = os.getenv("RENDER_GIT_COMMIT", os.getenv("GIT_COMMIT", ""))
+
 GEMINI_MODEL: str = "gemini-flash-lite-latest"
 
 THEMES: list[str] = [

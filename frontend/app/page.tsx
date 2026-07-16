@@ -49,7 +49,7 @@ const SAMPLE_INSIGHTS = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
-      <header className="max-w-6xl mx-auto px-8 py-6 flex items-center justify-between">
+      <header className="max-w-6xl mx-auto px-4 sm:px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Image src="/logo-mark.png" alt="Sentimo logo" width={34} height={34} />
           <span className="text-lg font-semibold text-slate-900 tracking-tight">Sentimo</span>
@@ -62,7 +62,7 @@ export default function LandingPage() {
         </Link>
       </header>
 
-      <section className="max-w-6xl mx-auto px-8 pt-12 pb-20 grid lg:grid-cols-2 gap-12 items-center">
+      <section className="max-w-6xl mx-auto px-4 sm:px-8 pt-12 pb-20 grid lg:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col gap-6">
           <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
             AI-powered review intelligence
@@ -74,7 +74,7 @@ export default function LandingPage() {
             Sentimo ingests customer reviews from anywhere, classifies them with Gemini in one
             batched call, and ranks what to fix first — by theme, severity, and location.
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Link
               href="/dashboard"
               className="rounded-lg bg-violet-600 text-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-violet-500 transition-colors"
@@ -117,7 +117,7 @@ export default function LandingPage() {
       </section>
 
       <section className="bg-slate-50 border-y border-slate-100">
-        <div className="max-w-6xl mx-auto px-8 py-16 grid sm:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-16 grid md:grid-cols-3 gap-6">
           {FEATURES.map((feature) => (
             <div
               key={feature.title}
@@ -142,7 +142,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="max-w-6xl mx-auto px-8 py-10 flex items-center justify-between text-xs text-slate-400">
+      <footer className="max-w-6xl mx-auto px-4 sm:px-8 py-10 flex items-center justify-between text-xs text-slate-400">
         <span>Sentimo — built with FastAPI, Next.js, and Gemini.</span>
         <Link href="/dashboard" className="font-medium text-slate-500 hover:text-violet-600">
           Open Dashboard →

@@ -58,7 +58,14 @@ def test_upload_csv_with_reviewer_rating_date_review_headers(
     assert body["reviews"][0]["location"] == "Vikings MOA"
     assert body["reviews"][0]["reviewer_name"] == "Jane"
     assert body["reviews"][0]["rating"] == 2
+    assert body["reviews"][0]["review_date"] == "2024-01-15"
     assert body["reviews"][0]["theme"] == "delivery"
+
+    # The parsed date is persisted, not just echoed back.
+    listed = client.get("/reviews").json()["items"]
+    by_text = {item["text"]: item for item in listed}
+    assert by_text["Cold pizza and late delivery"]["review_date"] == "2024-01-15"
+    assert by_text["Lovely staff"]["review_date"] == "2024-01-16"
 
 
 def test_upload_csv_without_location_returns_400(

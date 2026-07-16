@@ -1,4 +1,18 @@
-from fastapi import FastAPI, File, Form, Query, Request, UploadFile
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
+from typing import AsyncIterator
+
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +41,16 @@ from app.models import (
     ThemeCount,
 )
 
-app = FastAPI(title="Sentimo API")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # The schema SQL is idempotent, so applying it on every boot keeps the
+    # deployed database in sync without a separate migration step.
+    db.create_tables()
+    yield
+
+
+app = FastAPI(title="Sentimo API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,6 +59,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
+    """Guard mutating endpoints. No-op unless API_KEY is configured."""
+    if config.API_KEY and x_api_key != config.API_KEY:
+        raise HTTPException(status_code=401, detail="invalid or missing API key")
+
+
+@app.exception_handler(HTTPException)
+async def http_error_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": str(exc.detail), "detail": None},
+    )
 
 
 @app.exception_handler(RequestValidationError)
@@ -53,7 +90,118 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/reviews")
+@app.get("/version")
+def version() -> dict[str, str]:
+    """Which commit is actually live — for verifying deploys picked up new code."""
+    return {"commit": config.GIT_COMMIT or "unknown"}
+
+
+@dataclass
+class PendingReview:
+    """A review ready for ingestion, whatever its source."""
+
+    text: str
+    source: str
+    reviewer_name: str | None = None
+    rating: int | None = None
+    review_date: str | None = None
+
+
+class BatchLimitError(Exception):
+    """More new reviews in one ingestion than the allowed maximum."""
+
+
+def ingest_reviews(
+    cur, pending: list[PendingReview], location: str, max_batch: int | None = None
+) -> tuple[list[EnrichedReview], int, bool]:
+    """Shared ingestion pipeline: dedupe, insert, classify, enrich.
+
+    Dedupes against the database and within the batch, inserts the survivors,
+    classifies them with one batched Gemini call, and stores classifications.
+    Returns (enriched reviews, skipped duplicate count, any classification failed).
+    """
+    all_texts = [review.text for review in pending]
+    cur.execute("SELECT text FROM reviews WHERE text = ANY(%s)", (all_texts,))
+    existing = {row[0] for row in cur.fetchall()}
+
+    seen: set[str] = set()
+    new_reviews: list[PendingReview] = []
+    skipped_duplicate = 0
+    for review in pending:
+        if review.text in existing or review.text in seen:
+            skipped_duplicate += 1
+            continue
+        seen.add(review.text)
+        new_reviews.append(review)
+
+    if max_batch is not None and len(new_reviews) > max_batch:
+        raise BatchLimitError
+
+    review_ids: list[int] = []
+    for review in new_reviews:
+        cur.execute(
+            """
+            INSERT INTO reviews
+                (text, source, location, reviewer_name, rating, review_date)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                review.text,
+                review.source,
+                location,
+                review.reviewer_name,
+                review.rating,
+                review.review_date,
+            ),
+        )
+        review_ids.append(cur.fetchone()[0])
+
+    texts = [review.text for review in new_reviews]
+    try:
+        classifications = classify_reviews(texts) if texts else []
+    except Exception:
+        # Gemini unreachable or errored: reviews are still inserted,
+        # every classification in the batch is marked failed.
+        classifications = [None] * len(texts)
+
+    enriched: list[EnrichedReview] = []
+    for review_id, review, classification in zip(
+        review_ids, new_reviews, classifications
+    ):
+        fields = {
+            "id": review_id,
+            "text": review.text,
+            "location": location,
+            "reviewer_name": review.reviewer_name,
+            "rating": review.rating,
+            "review_date": review.review_date,
+        }
+        if classification is None:
+            enriched.append(EnrichedReview(**fields))
+            continue
+        cur.execute(
+            """
+            INSERT INTO classifications
+                (review_id, theme, sentiment, severity, extracted_issue, model)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (
+                review_id,
+                classification.theme,
+                classification.sentiment,
+                classification.severity,
+                classification.extracted_issue,
+                config.GEMINI_MODEL,
+            ),
+        )
+        enriched.append(EnrichedReview(**fields, **classification.model_dump()))
+
+    any_failed = any(classification is None for classification in classifications)
+    return enriched, skipped_duplicate, any_failed
+
+
+@app.post("/reviews", dependencies=[Depends(require_api_key)])
 def create_reviews(payload: ReviewsRequest) -> JSONResponse:
     location = payload.location.strip()
     if not location:
@@ -62,78 +210,17 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
             content={"error": "location is required", "detail": None},
         )
 
+    pending = [
+        PendingReview(text=review.text, source=review.source)
+        for review in payload.reviews
+    ]
     with db.get_connection() as conn, conn.cursor() as cur:
-        all_texts = [review.text for review in payload.reviews]
-        cur.execute("SELECT text FROM reviews WHERE text = ANY(%s)", (all_texts,))
-        existing = {row[0] for row in cur.fetchall()}
-
-        seen: set[str] = set()
-        new_reviews = []
-        skipped_duplicate = 0
-        for review in payload.reviews:
-            if review.text in existing or review.text in seen:
-                skipped_duplicate += 1
-                continue
-            seen.add(review.text)
-            new_reviews.append(review)
-
-        texts = [review.text for review in new_reviews]
-        review_ids: list[int] = []
-        for review in new_reviews:
-            cur.execute(
-                """
-                INSERT INTO reviews (text, source, location)
-                VALUES (%s, %s, %s)
-                RETURNING id
-                """,
-                (review.text, review.source, location),
-            )
-            review_ids.append(cur.fetchone()[0])
-
-        try:
-            classifications = classify_reviews(texts) if texts else []
-        except Exception:
-            # Gemini unreachable or errored: reviews are still inserted,
-            # every classification in the batch is marked failed.
-            classifications = [None] * len(texts)
-
-        enriched: list[EnrichedReview] = []
-        for review_id, review, classification in zip(
-            review_ids, new_reviews, classifications
-        ):
-            if classification is None:
-                enriched.append(
-                    EnrichedReview(id=review_id, text=review.text, location=location)
-                )
-                continue
-            cur.execute(
-                """
-                INSERT INTO classifications
-                    (review_id, theme, sentiment, severity, extracted_issue, model)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    review_id,
-                    classification.theme,
-                    classification.sentiment,
-                    classification.severity,
-                    classification.extracted_issue,
-                    config.GEMINI_MODEL,
-                ),
-            )
-            enriched.append(
-                EnrichedReview(
-                    id=review_id,
-                    text=review.text,
-                    location=location,
-                    **classification.model_dump(),
-                )
-            )
+        enriched, skipped_duplicate, any_failed = ingest_reviews(cur, pending, location)
 
     body = ReviewsResponse(
-        created=len(review_ids), skipped_duplicate=skipped_duplicate, reviews=enriched
+        created=len(enriched), skipped_duplicate=skipped_duplicate, reviews=enriched
     )
-    if any(classification is None for classification in classifications):
+    if any_failed:
         return JSONResponse(
             status_code=422,
             content={
@@ -144,7 +231,7 @@ def create_reviews(payload: ReviewsRequest) -> JSONResponse:
     return JSONResponse(status_code=201, content=body.model_dump())
 
 
-@app.post("/reviews/csv")
+@app.post("/reviews/csv", dependencies=[Depends(require_api_key)])
 async def upload_reviews_csv(
     file: UploadFile = File(...),
     location: str = Form(...),
@@ -185,88 +272,34 @@ async def upload_reviews_csv(
             },
         )
 
-    with db.get_connection() as conn, conn.cursor() as cur:
-        all_texts = [review.text for review in parsed.reviews]
-        cur.execute("SELECT text FROM reviews WHERE text = ANY(%s)", (all_texts,))
-        existing = {row[0] for row in cur.fetchall()}
-        new_reviews = [r for r in parsed.reviews if r.text not in existing]
-        skipped_duplicate = parsed.skipped_duplicate + (
-            len(parsed.reviews) - len(new_reviews)
+    pending = [
+        PendingReview(
+            text=review.text,
+            source="csv",
+            reviewer_name=review.reviewer_name,
+            rating=review.rating,
+            review_date=review.date,
+        )
+        for review in parsed.reviews
+    ]
+    try:
+        with db.get_connection() as conn, conn.cursor() as cur:
+            enriched, db_skipped, any_failed = ingest_reviews(
+                cur, pending, location, max_batch=50
+            )
+    except BatchLimitError:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "max 50 reviews per batch", "detail": None},
         )
 
-        if len(new_reviews) > 50:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "max 50 reviews per batch", "detail": None},
-            )
-
-        texts = [review.text for review in new_reviews]
-
-        review_ids: list[int] = []
-        for review in new_reviews:
-            cur.execute(
-                """
-                INSERT INTO reviews (text, source, location, reviewer_name, rating)
-                VALUES (%s, %s, %s, %s, %s)
-                RETURNING id
-                """,
-                (review.text, "csv", location, review.reviewer_name, review.rating),
-            )
-            review_ids.append(cur.fetchone()[0])
-
-        try:
-            classifications = classify_reviews(texts) if texts else []
-        except Exception:
-            classifications = [None] * len(texts)
-
-        enriched: list[EnrichedReview] = []
-        for review_id, review, classification in zip(
-            review_ids, new_reviews, classifications
-        ):
-            if classification is None:
-                enriched.append(
-                    EnrichedReview(
-                        id=review_id,
-                        text=review.text,
-                        location=location,
-                        reviewer_name=review.reviewer_name,
-                        rating=review.rating,
-                    )
-                )
-                continue
-            cur.execute(
-                """
-                INSERT INTO classifications
-                    (review_id, theme, sentiment, severity, extracted_issue, model)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    review_id,
-                    classification.theme,
-                    classification.sentiment,
-                    classification.severity,
-                    classification.extracted_issue,
-                    config.GEMINI_MODEL,
-                ),
-            )
-            enriched.append(
-                EnrichedReview(
-                    id=review_id,
-                    text=review.text,
-                    location=location,
-                    reviewer_name=review.reviewer_name,
-                    rating=review.rating,
-                    **classification.model_dump(),
-                )
-            )
-
     body = CsvUploadResponse(
-        created=len(review_ids),
+        created=len(enriched),
         skipped_empty=parsed.skipped_empty,
-        skipped_duplicate=skipped_duplicate,
+        skipped_duplicate=parsed.skipped_duplicate + db_skipped,
         reviews=enriched,
     )
-    if any(classification is None for classification in classifications):
+    if any_failed:
         return JSONResponse(
             status_code=422,
             content={
@@ -320,7 +353,7 @@ def list_reviews(
         cur.execute(
             f"""
             SELECT r.id, r.text, r.source, r.created_at,
-                   r.location, r.reviewer_name, r.rating,
+                   r.location, r.reviewer_name, r.rating, r.review_date,
                    c.theme, c.sentiment, c.severity, c.extracted_issue
             FROM reviews r
             LEFT JOIN classifications c ON c.review_id = r.id
@@ -339,10 +372,11 @@ def list_reviews(
                 location=row[4],
                 reviewer_name=row[5],
                 rating=row[6],
-                theme=row[7],
-                sentiment=row[8],
-                severity=row[9],
-                extracted_issue=row[10],
+                review_date=row[7].isoformat() if row[7] is not None else None,
+                theme=row[8],
+                sentiment=row[9],
+                severity=row[10],
+                extracted_issue=row[11],
             )
             for row in cur.fetchall()
         ]
@@ -522,7 +556,7 @@ def compare_locations(locations: str) -> JSONResponse:
     )
 
 
-@app.delete("/reviews")
+@app.delete("/reviews", dependencies=[Depends(require_api_key)])
 def delete_all_reviews() -> JSONResponse:
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("DELETE FROM reviews")
@@ -530,7 +564,7 @@ def delete_all_reviews() -> JSONResponse:
     return JSONResponse(status_code=200, content={"deleted": deleted})
 
 
-@app.delete("/reviews/{review_id}")
+@app.delete("/reviews/{review_id}", dependencies=[Depends(require_api_key)])
 def delete_review(review_id: int) -> JSONResponse:
     with db.get_connection() as conn, conn.cursor() as cur:
         cur.execute("DELETE FROM reviews WHERE id = %s RETURNING id", (review_id,))

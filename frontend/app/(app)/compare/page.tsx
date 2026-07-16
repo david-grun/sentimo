@@ -48,7 +48,7 @@ export default function ComparePage() {
     : [];
 
   return (
-    <main className="max-w-5xl mx-auto px-8 py-10 flex flex-col gap-6">
+    <main className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10 flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Compare locations</h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -109,7 +109,8 @@ export default function ComparePage() {
           {complaintThemes.length > 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
               <h3 className="font-semibold text-slate-900 mb-3">Which location is performing better</h3>
-              <table className="w-full text-sm text-left">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] text-sm text-left">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500">
                     <th className="py-2 pr-4 font-medium">Theme</th>
@@ -145,6 +146,7 @@ export default function ComparePage() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </>

@@ -2,9 +2,28 @@
 # sentimo
 Turns scattered customer reviews into a ranked "fix this first" priority list using AI classification
 
-## Problem
+## Why I built this
 
-Small-business owners collect hundreds of reviews but cannot see the pattern. Sentimo ingests raw reviews, classifies each into a fixed theme taxonomy with sentiment and severity via one batched Gemini API call, and surfaces a ranked "fix this first" insights dashboard.
+Small-business owners collect hundreds of reviews across platforms but can't see the pattern in them. Worse, the reviews that matter most get buried: a single "I got food poisoning here" disappears among fifty "great vibes!" comments, and by the time the owner notices the trend, it has already cost them customers. Reading every review doesn't scale, and star averages hide *why* people are unhappy.
+
+Sentimo turns that pile of unstructured text into a prioritized action list. Paste reviews in (or upload a CSV export), and every review is classified by theme, sentiment, and a 1–5 severity score. The dashboard then answers the only question that matters: **what should I fix first?** — ranked by how many customers are complaining and how severe it is — plus a critical-alerts strip so a single severity-5 review can never be diluted by averages.
+
+I also built this to go beyond a tutorial-scale project: a real product deployed end-to-end (frontend, API, database, CI) on production infrastructure, integrating an LLM in a way that is cheap, validated, and resilient to failure.
+
+## What I did
+
+- **Designed and shipped the full stack**: a FastAPI backend (9 REST endpoints, raw parameterized SQL on PostgreSQL), a Next.js 14 + TypeScript + Tailwind frontend (dashboard, review browser, location comparison), deployed on Render, Vercel, and Neon — all free tier, $0/month.
+- **Built the AI pipeline for cost and resilience**: one batched Gemini call per ingestion (not per review), strict JSON-mode output, and every model response validated with Pydantic before it touches the database. If the AI returns garbage or is down entirely, reviews are still saved and flagged — an AI outage degrades the product, it never breaks it.
+- **Engineered the classification prompt like code**: a fixed 8-theme taxonomy with explicit per-theme definitions, iterated when the model misbehaved (e.g. food-poisoning reviews now correctly classify as `cleanliness`, not `product_quality`).
+- **Made messy real-world data "just work"**: the CSV importer auto-maps arbitrary export headers via synonym matching, dedupes within the file and against the database, and fails with an actionable error listing the headers it found.
+- **Shipped multi-location analytics**: side-by-side branch comparison with sentiment splits, per-theme winners, and AI-generated recommendations synthesized from each theme's actual review text.
+- **Backed it with engineering discipline**: 50 pytest tests (unit + integration, LLM fully mocked, run against a Dockerized Postgres), GitHub Actions CI gating lint, tests, type-checking, and the production build on every push.
+
+## The value
+
+For a business owner: hours of review-reading collapses into a ranked list of concrete problems, each with an AI-written "here's what to do about it" — and emergencies (hygiene, food safety) surface immediately instead of drowning in averages.
+
+As an engineering artifact: it demonstrates end-to-end product delivery — schema design, API design, LLM integration with real failure handling, automated testing, CI, and multi-service cloud deployment — in one coherent, working system.
 
 ## Stack
 
@@ -27,9 +46,9 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Copy `.env.example` to `.env` in the repo root and fill in `DATABASE_URL` (Neon pooled connection string) and `GEMINI_API_KEY` (from Google AI Studio).
+Copy `.env.example` to `.env` in the repo root and fill in `DATABASE_URL` (Neon pooled connection string) and `GEMINI_API_KEY` (from Google AI Studio). Optionally set `API_KEY` to require an `X-API-Key` header on all mutating endpoints.
 
-Create the tables once:
+The schema is applied automatically on startup (it's idempotent). To create the tables without starting the server:
 
 ```
 cd backend
@@ -113,12 +132,16 @@ Ranked "fix this first" aggregation, `score = count * avg_severity`.
 
 ## Deployment
 
-- **Backend (Render)**: new Web Service from this repo, root directory `backend`, build command `pip install -r requirements.txt`, start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Set `DATABASE_URL`, `GEMINI_API_KEY`, `ALLOWED_ORIGINS` env vars.
-- **Frontend (Vercel)**: import this repo, root directory `frontend`. Set `NEXT_PUBLIC_API_URL` to the Render backend URL.
-- **Database (Neon)**: create a project, run `python -m app.db` once (with `DATABASE_URL` pointed at Neon) to create tables.
+- **Backend (Render)**: new Web Service from this repo, root directory `backend`, build command `pip install -r requirements.txt`, start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Set `DATABASE_URL`, `GEMINI_API_KEY`, `ALLOWED_ORIGINS` (and optionally `API_KEY`) env vars.
+- **Frontend (Vercel)**: import this repo, root directory `frontend`. Set `NEXT_PUBLIC_API_URL` to the Render backend URL (and `NEXT_PUBLIC_API_KEY` if the backend sets `API_KEY`).
+- **Database (Neon)**: create a project; the schema is applied automatically when the backend starts.
+- **Verifying a deploy**: `curl <backend>/version` returns the live commit hash — if it doesn't match `git rev-parse HEAD`, Render is serving stale code (trigger a manual deploy).
 
 ## CI
 
 `.github/workflows/ci.yml` runs on push to `main` and on pull requests:
-- **backend job**: installs deps, `ruff check .`, `pytest -q` (against a Postgres service container)
+- **backend job**: installs deps, `ruff check .`, `pytest -
+q` (against a Postgres service container)
 - **frontend job**: `npm ci`, `tsc --noEmit`, `next build`
+
+

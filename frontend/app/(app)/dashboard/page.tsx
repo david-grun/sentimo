@@ -74,7 +74,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-8 py-10 flex flex-col gap-8">
+    <main className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10 flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Dashboard</h1>
         <p className="text-sm text-slate-500 mt-1">
