@@ -51,7 +51,13 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       <header className="max-w-6xl mx-auto px-4 sm:px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Image src="/logo-mark.png" alt="Sentimo logo" width={34} height={34} />
+          <Image
+            src="/logo-mark.png"
+            alt="Sentimo logo"
+            width={34}
+            height={34}
+            className="h-[2.125rem] w-[2.125rem]"
+          />
           <span className="text-lg font-semibold text-slate-900 tracking-tight">Sentimo</span>
         </div>
         <Link

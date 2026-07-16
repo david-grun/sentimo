@@ -49,7 +49,13 @@ export default function Sidebar() {
           where the sidebar is hidden — without it there would be no navigation. */}
       <header className="md:hidden sticky top-0 z-10 flex items-center justify-between gap-3 bg-slate-950 px-4 py-3 text-slate-300">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/logo-mark.png" alt="Sentimo logo" width={28} height={28} />
+          <Image
+            src="/logo-mark.png"
+            alt="Sentimo logo"
+            width={28}
+            height={28}
+            className="h-7 w-7"
+          />
           <span className="hidden sm:inline text-base font-semibold text-white tracking-tight">
             Sentimo
           </span>
@@ -77,7 +83,13 @@ export default function Sidebar() {
       <aside className="hidden md:flex w-60 shrink-0 flex-col bg-slate-950 text-slate-300 min-h-screen">
       <div className="px-5 py-6">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo-mark.png" alt="Sentimo logo" width={34} height={34} />
+          <Image
+            src="/logo-mark.png"
+            alt="Sentimo logo"
+            width={34}
+            height={34}
+            className="h-[2.125rem] w-[2.125rem]"
+          />
           <span className="text-lg font-semibold text-white tracking-tight">Sentimo</span>
         </Link>
       </div>

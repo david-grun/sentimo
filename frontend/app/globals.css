@@ -13,6 +13,17 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Zooming out (or an ultra-wide screen) enlarges the effective viewport.
+   Every layout size here is rem-based, so scaling the root font size with
+   the viewport scales the whole design proportionally — instead of the
+   content shrinking into a fixed-width island with huge empty margins.
+   Identical to the default 16px up to 1920px wide. */
+@media (min-width: 1920px) {
+  html {
+    font-size: calc(100vw / 120);
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
